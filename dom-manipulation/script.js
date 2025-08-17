@@ -7,13 +7,8 @@ let quotes = [
     { text: "I have not failed. I've just found 10,000 ways that won't work.", category: "Perseverance" }
 ];
 
-// Simulate a server-side data store
-// In a real application, this would be a database accessible via an API
-let serverQuotes = [
-    { text: "The best way to predict the future is to create it.", category: "Inspiration" },
-    { text: "Life is what happens when you're busy making other plans.", category: "Life" },
-    { text: "Get busy living or get busy dying.", category: "Life" }
-];
+// Server API endpoint for our mock data
+const API_URL = 'https://jsonplaceholder.typicode.com/posts';
 
 // Get DOM elements
 const quoteDisplay = document.getElementById('quoteDisplay');
@@ -96,8 +91,8 @@ function showRandomQuote(category = 'all') {
     quoteDisplay.appendChild(quoteCategory);
 }
 
-// Function to add a new quote
-function addQuote() {
+// Function to add a new quote and sync with the server
+async function addQuote() {
     const newQuoteText = document.getElementById('newQuoteText');
     const newQuoteCategory = document.getElementById('newQuoteCategory');
 
@@ -112,16 +107,36 @@ function addQuote() {
 
     const newQuote = { text: text, category: category };
     
-    // Add to local data
+    // Add to local data first for a fast UI response
     quotes.push(newQuote);
     saveQuotes();
+    populateCategories();
+    showRandomQuote();
 
-    // Simulate sending data to the server (adds it to the serverQuotes array)
-    serverQuotes.push(newQuote);
     statusMessage.textContent = 'New quote added. Syncing with server...';
-    
-    populateCategories(); // Update the categories list
-    showRandomQuote(); // Show the newly added quote or a new random one
+
+    // Simulate sending data to the server
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                title: text,
+                body: category,
+                userId: 1,
+            }),
+            headers: {
+                'Content-type': 'application/json; charset=UTF-8',
+            },
+        });
+        if (response.ok) {
+            statusMessage.textContent = 'Quote successfully synced with server!';
+        } else {
+            statusMessage.textContent = 'Error syncing quote with server.';
+        }
+    } catch (error) {
+        statusMessage.textContent = 'Network error. Could not sync with server.';
+        console.error('Error:', error);
+    }
 
     // Clear input fields
     newQuoteText.value = '';
@@ -183,9 +198,7 @@ function importFromJsonFile(event) {
             const importedQuotes = JSON.parse(event.target.result);
             // Validate that imported data is an array of objects
             if (Array.isArray(importedQuotes) && importedQuotes.every(q => q.text && q.category)) {
-                // Add to local and simulated server data
                 quotes.push(...importedQuotes);
-                serverQuotes.push(...importedQuotes);
                 saveQuotes();
                 populateCategories(); // Update the categories list
                 showRandomQuote(); // Display a new random quote
@@ -207,38 +220,41 @@ function filterQuotes() {
     showRandomQuote(selectedCategory);
 }
 
-// Function to simulate fetching quotes from the server
+// Function to fetch quotes from the server (JSONPlaceholder)
 async function fetchQuotesFromServer() {
-    // In a real application, you would use a fetch call to an API endpoint
-    // Example: const response = await fetch('https://api.example.com/quotes');
-    // For this simulation, we'll just return our mock serverQuotes array after a delay.
-    return new Promise(resolve => {
-        setTimeout(() => {
-            resolve(JSON.parse(JSON.stringify(serverQuotes))); // Return a deep copy
-        }, 1500); // Simulate network latency
-    });
+    statusMessage.textContent = 'Fetching updates from server...';
+    try {
+        const response = await fetch(API_URL);
+        const serverPosts = await response.json();
+        // Map the server's post data to our quote format
+        const serverData = serverPosts.map(post => ({
+            text: post.title,
+            category: 'Server' // Assign a generic category to distinguish
+        }));
+        return serverData;
+    } catch (error) {
+        statusMessage.textContent = 'Sync failed. Could not reach server.';
+        console.error('Fetch error:', error);
+        return []; // Return an empty array on failure
+    }
 }
 
-// Function to sync local data with the simulated server
+// Function to sync local data with the server
 async function syncWithServer() {
-    statusMessage.textContent = 'Checking for server updates...';
-    try {
-        const serverData = await fetchQuotesFromServer();
-        const hasConflicts = JSON.stringify(quotes) !== JSON.stringify(serverData);
-
-        if (hasConflicts) {
-            // Conflict resolution: server data takes precedence
-            quotes = serverData;
-            saveQuotes();
-            populateCategories();
-            showRandomQuote(categoryFilter.value);
-            statusMessage.textContent = 'Data synced! Server updates merged.';
-        } else {
-            statusMessage.textContent = 'No updates from server. Local data is up-to-date.';
-        }
-    } catch (error) {
-        statusMessage.textContent = 'Sync failed. Check network connection.';
-        console.error('Sync error:', error);
+    const serverData = await fetchQuotesFromServer();
+    if (serverData.length > 0) {
+        const mergedQuotes = [...quotes, ...serverData];
+        // Remove duplicates based on text content
+        const uniqueQuotes = Array.from(new Set(mergedQuotes.map(q => JSON.stringify(q)))).map(q => JSON.parse(q));
+        
+        // Conflict resolution: server's data is added to the local data.
+        quotes = uniqueQuotes;
+        saveQuotes();
+        populateCategories();
+        showRandomQuote(categoryFilter.value);
+        statusMessage.textContent = 'Data synced! Server updates merged.';
+    } else {
+        statusMessage.textContent = 'No updates from server. Local data is up-to-date.';
     }
 }
 
@@ -261,5 +277,5 @@ if (lastFilter && quotes.some(quote => quote.category === lastFilter)) {
     showRandomQuote();
 }
 
-// Start periodic syncing with the simulated server every 15 seconds
+// Start periodic syncing with the server every 15 seconds
 setInterval(syncWithServer, 15000);
