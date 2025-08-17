@@ -1,5 +1,5 @@
-
-let quotes = [
+ // Initial array of quotes
+        let quotes = [
             { text: "The only way to do great work is to love what you do.", category: "Inspiration" },
             { text: "Innovation distinguishes between a leader and a follower.", category: "Technology" },
             { text: "The future belongs to those who believe in the beauty of their dreams.", category: "Dreams" },
@@ -10,9 +10,8 @@ let quotes = [
         // Get DOM elements
         const quoteDisplay = document.getElementById('quoteDisplay');
         const newQuoteBtn = document.getElementById('newQuote');
-        const addQuoteBtn = document.getElementById('addQuote');
-        const newQuoteText = document.getElementById('newQuoteText');
-        const newQuoteCategory = document.getElementById('newQuoteCategory');
+        const showAddQuoteFormBtn = document.getElementById('showAddQuoteFormBtn');
+        const addQuoteFormContainer = document.getElementById('addQuoteFormContainer');
         const exportQuotesBtn = document.getElementById('exportQuotes');
         const importFile = document.getElementById('importFile');
 
@@ -53,6 +52,9 @@ let quotes = [
 
         // Function to add a new quote
         function addQuote() {
+            const newQuoteText = document.getElementById('newQuoteText');
+            const newQuoteCategory = document.getElementById('newQuoteCategory');
+
             const text = newQuoteText.value.trim();
             const category = newQuoteCategory.value.trim();
             
@@ -70,6 +72,38 @@ let quotes = [
             // Clear input fields
             newQuoteText.value = '';
             newQuoteCategory.value = '';
+        }
+
+        // Function to create and add the quote form dynamically
+        function createAddQuoteForm() {
+            // Check if form already exists to prevent duplicates
+            if (addQuoteFormContainer.innerHTML !== '') {
+                return;
+            }
+
+            const formDiv = document.createElement('div');
+            formDiv.classList.add('quote-form');
+
+            const quoteTextInput = document.createElement('input');
+            quoteTextInput.setAttribute('id', 'newQuoteText');
+            quoteTextInput.setAttribute('type', 'text');
+            quoteTextInput.setAttribute('placeholder', 'Enter a new quote');
+
+            const quoteCategoryInput = document.createElement('input');
+            quoteCategoryInput.setAttribute('id', 'newQuoteCategory');
+            quoteCategoryInput.setAttribute('type', 'text');
+            quoteCategoryInput.setAttribute('placeholder', 'Enter quote category');
+
+            const addQuoteButton = document.createElement('button');
+            addQuoteButton.setAttribute('id', 'addQuote');
+            addQuoteButton.textContent = 'Add Quote';
+            addQuoteButton.addEventListener('click', addQuote);
+
+            formDiv.appendChild(quoteTextInput);
+            formDiv.appendChild(quoteCategoryInput);
+            formDiv.appendChild(addQuoteButton);
+
+            addQuoteFormContainer.appendChild(formDiv);
         }
 
         // Function to export quotes to a JSON file
@@ -111,16 +145,9 @@ let quotes = [
         
         // Event listeners
         newQuoteBtn.addEventListener('click', showRandomQuote);
-        addQuoteBtn.addEventListener('click', addQuote);
+        showAddQuoteFormBtn.addEventListener('click', createAddQuoteForm);
         exportQuotesBtn.addEventListener('click', exportQuotes);
 
         // Initial setup
         loadQuotes();
         showRandomQuote();
-
-
-
-
-
-
-
