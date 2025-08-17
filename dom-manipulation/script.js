@@ -239,7 +239,7 @@ async function fetchQuotesFromServer() {
     }
 }
 
-// Function to sync local data with the server
+// Function to sync local data with the server syncQuotes
 async function syncWithServer() {
     const serverData = await fetchQuotesFromServer();
     if (serverData.length > 0) {
