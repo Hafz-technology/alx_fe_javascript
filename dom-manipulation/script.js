@@ -207,16 +207,28 @@ function filterQuotes() {
     showRandomQuote(selectedCategory);
 }
 
+// Function to simulate fetching quotes from the server
+async function fetchQuotesFromServer() {
+    // In a real application, you would use a fetch call to an API endpoint
+    // Example: const response = await fetch('https://api.example.com/quotes');
+    // For this simulation, we'll just return our mock serverQuotes array after a delay.
+    return new Promise(resolve => {
+        setTimeout(() => {
+            resolve(JSON.parse(JSON.stringify(serverQuotes))); // Return a deep copy
+        }, 1500); // Simulate network latency
+    });
+}
+
 // Function to sync local data with the simulated server
-function syncWithServer() {
-    // Simulate a network request with a delay
+async function syncWithServer() {
     statusMessage.textContent = 'Checking for server updates...';
-    setTimeout(() => {
-        const hasConflicts = JSON.stringify(quotes) !== JSON.stringify(serverQuotes);
-        
+    try {
+        const serverData = await fetchQuotesFromServer();
+        const hasConflicts = JSON.stringify(quotes) !== JSON.stringify(serverData);
+
         if (hasConflicts) {
             // Conflict resolution: server data takes precedence
-            quotes = JSON.parse(JSON.stringify(serverQuotes)); // Deep copy to avoid reference issues
+            quotes = serverData;
             saveQuotes();
             populateCategories();
             showRandomQuote(categoryFilter.value);
@@ -224,9 +236,11 @@ function syncWithServer() {
         } else {
             statusMessage.textContent = 'No updates from server. Local data is up-to-date.';
         }
-    }, 2000); // 2-second delay to simulate network latency
+    } catch (error) {
+        statusMessage.textContent = 'Sync failed. Check network connection.';
+        console.error('Sync error:', error);
+    }
 }
-
 
 // Event listeners
 newQuoteBtn.addEventListener('click', () => showRandomQuote(categoryFilter.value));
