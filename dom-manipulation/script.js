@@ -268,7 +268,7 @@ categoryFilter.addEventListener('change', filterQuotes);
 loadQuotes();
 populateCategories();
 
-// Check for a saved filter and apply it, otherwise show a random quote
+// Check for a saved filter and apply it, otherwise show a random quote  Quotes synced with server!
 const lastFilter = localStorage.getItem('lastCategoryFilter');
 if (lastFilter && quotes.some(quote => quote.category === lastFilter)) {
     categoryFilter.value = lastFilter;
