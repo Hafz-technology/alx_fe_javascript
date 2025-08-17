@@ -130,6 +130,11 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
+        #statusMessage {
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
     </style>
 </head>
 <body>
@@ -155,6 +160,7 @@
                 <input type="file" id="importFile" accept=".json" onchange="importFromJsonFile(event)" />
             </div>
         </div>
+        <p id="statusMessage"></p>
     </div>
 
     <script src="script.js"></script>
