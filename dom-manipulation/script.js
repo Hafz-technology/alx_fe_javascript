@@ -7,6 +7,14 @@ let quotes = [
     { text: "I have not failed. I've just found 10,000 ways that won't work.", category: "Perseverance" }
 ];
 
+// Simulate a server-side data store
+// In a real application, this would be a database accessible via an API
+let serverQuotes = [
+    { text: "The best way to predict the future is to create it.", category: "Inspiration" },
+    { text: "Life is what happens when you're busy making other plans.", category: "Life" },
+    { text: "Get busy living or get busy dying.", category: "Life" }
+];
+
 // Get DOM elements
 const quoteDisplay = document.getElementById('quoteDisplay');
 const newQuoteBtn = document.getElementById('newQuote');
@@ -14,8 +22,8 @@ const showAddQuoteFormBtn = document.getElementById('showAddQuoteFormBtn');
 const addQuoteFormContainer = document.getElementById('addQuoteFormContainer');
 const exportQuotesBtn = document.getElementById('exportQuotes');
 const importFile = document.getElementById('importFile');
-// New DOM elements for filtering
 const categoryFilter = document.getElementById('categoryFilter');
+const statusMessage = document.getElementById('statusMessage');
 
 // Function to save quotes to local storage
 function saveQuotes() {
@@ -88,13 +96,6 @@ function showRandomQuote(category = 'all') {
     quoteDisplay.appendChild(quoteCategory);
 }
 
-// Function to filter quotes based on the selected dropdown value
-function filterQuotes() {
-    const selectedCategory = categoryFilter.value;
-    localStorage.setItem('lastCategoryFilter', selectedCategory);
-    showRandomQuote(selectedCategory);
-}
-
 // Function to add a new quote
 function addQuote() {
     const newQuoteText = document.getElementById('newQuoteText');
@@ -110,8 +111,15 @@ function addQuote() {
     }
 
     const newQuote = { text: text, category: category };
+    
+    // Add to local data
     quotes.push(newQuote);
-    saveQuotes(); // Save to local storage
+    saveQuotes();
+
+    // Simulate sending data to the server (adds it to the serverQuotes array)
+    serverQuotes.push(newQuote);
+    statusMessage.textContent = 'New quote added. Syncing with server...';
+    
     populateCategories(); // Update the categories list
     showRandomQuote(); // Show the newly added quote or a new random one
 
@@ -175,7 +183,9 @@ function importFromJsonFile(event) {
             const importedQuotes = JSON.parse(event.target.result);
             // Validate that imported data is an array of objects
             if (Array.isArray(importedQuotes) && importedQuotes.every(q => q.text && q.category)) {
+                // Add to local and simulated server data
                 quotes.push(...importedQuotes);
+                serverQuotes.push(...importedQuotes);
                 saveQuotes();
                 populateCategories(); // Update the categories list
                 showRandomQuote(); // Display a new random quote
@@ -189,6 +199,34 @@ function importFromJsonFile(event) {
     };
     fileReader.readAsText(event.target.files[0]);
 }
+
+// Function to filter quotes based on the selected dropdown value
+function filterQuotes() {
+    const selectedCategory = categoryFilter.value;
+    localStorage.setItem('lastCategoryFilter', selectedCategory);
+    showRandomQuote(selectedCategory);
+}
+
+// Function to sync local data with the simulated server
+function syncWithServer() {
+    // Simulate a network request with a delay
+    statusMessage.textContent = 'Checking for server updates...';
+    setTimeout(() => {
+        const hasConflicts = JSON.stringify(quotes) !== JSON.stringify(serverQuotes);
+        
+        if (hasConflicts) {
+            // Conflict resolution: server data takes precedence
+            quotes = JSON.parse(JSON.stringify(serverQuotes)); // Deep copy to avoid reference issues
+            saveQuotes();
+            populateCategories();
+            showRandomQuote(categoryFilter.value);
+            statusMessage.textContent = 'Data synced! Server updates merged.';
+        } else {
+            statusMessage.textContent = 'No updates from server. Local data is up-to-date.';
+        }
+    }, 2000); // 2-second delay to simulate network latency
+}
+
 
 // Event listeners
 newQuoteBtn.addEventListener('click', () => showRandomQuote(categoryFilter.value));
@@ -208,3 +246,6 @@ if (lastFilter && quotes.some(quote => quote.category === lastFilter)) {
 } else {
     showRandomQuote();
 }
+
+// Start periodic syncing with the simulated server every 15 seconds
+setInterval(syncWithServer, 15000);
