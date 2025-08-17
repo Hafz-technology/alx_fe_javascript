@@ -14,6 +14,8 @@ const showAddQuoteFormBtn = document.getElementById('showAddQuoteFormBtn');
 const addQuoteFormContainer = document.getElementById('addQuoteFormContainer');
 const exportQuotesBtn = document.getElementById('exportQuotes');
 const importFile = document.getElementById('importFile');
+// New DOM elements for filtering
+const categoryFilter = document.getElementById('categoryFilter');
 
 // Function to save quotes to local storage
 function saveQuotes() {
@@ -28,10 +30,46 @@ function loadQuotes() {
     }
 }
 
-// Function to show a random quote
-function showRandomQuote() {
-    const randomIndex = Math.floor(Math.random() * quotes.length);
-    const randomQuote = quotes[randomIndex];
+// Function to populate the category filter dropdown
+function populateCategories() {
+    // Get unique categories from the quotes array
+    const categories = ['all', ...new Set(quotes.map(quote => quote.category))];
+
+    // Clear existing options
+    categoryFilter.innerHTML = '';
+
+    // Create and append a default option for all categories
+    const allOption = document.createElement('option');
+    allOption.value = 'all';
+    allOption.textContent = 'All Categories';
+    categoryFilter.appendChild(allOption);
+
+    // Create and append options for each unique category
+    categories.forEach(category => {
+        if (category !== 'all') {
+            const option = document.createElement('option');
+            option.value = category;
+            option.textContent = category;
+            categoryFilter.appendChild(option);
+        }
+    });
+}
+
+// Function to show a random quote from the specified category
+function showRandomQuote(category = 'all') {
+    let filteredQuotes = quotes;
+    if (category !== 'all') {
+        filteredQuotes = quotes.filter(quote => quote.category === category);
+    }
+    
+    // Handle case where no quotes are found for the selected category
+    if (filteredQuotes.length === 0) {
+        quoteDisplay.innerHTML = '<p class="text-gray-500 text-lg">No quotes found for this category.</p>';
+        return;
+    }
+
+    const randomIndex = Math.floor(Math.random() * filteredQuotes.length);
+    const randomQuote = filteredQuotes[randomIndex];
     
     // Clear previous content
     quoteDisplay.innerHTML = '';
@@ -48,6 +86,13 @@ function showRandomQuote() {
     // Append new elements to the display div
     quoteDisplay.appendChild(quoteText);
     quoteDisplay.appendChild(quoteCategory);
+}
+
+// Function to filter quotes based on the selected dropdown value
+function filterQuotes() {
+    const selectedCategory = categoryFilter.value;
+    localStorage.setItem('lastCategoryFilter', selectedCategory);
+    showRandomQuote(selectedCategory);
 }
 
 // Function to add a new quote
@@ -67,6 +112,7 @@ function addQuote() {
     const newQuote = { text: text, category: category };
     quotes.push(newQuote);
     saveQuotes(); // Save to local storage
+    populateCategories(); // Update the categories list
     showRandomQuote(); // Show the newly added quote or a new random one
 
     // Clear input fields
@@ -131,6 +177,7 @@ function importFromJsonFile(event) {
             if (Array.isArray(importedQuotes) && importedQuotes.every(q => q.text && q.category)) {
                 quotes.push(...importedQuotes);
                 saveQuotes();
+                populateCategories(); // Update the categories list
                 showRandomQuote(); // Display a new random quote
                 alert('Quotes imported successfully!');
             } else {
@@ -144,10 +191,20 @@ function importFromJsonFile(event) {
 }
 
 // Event listeners
-newQuoteBtn.addEventListener('click', showRandomQuote);
+newQuoteBtn.addEventListener('click', () => showRandomQuote(categoryFilter.value));
 showAddQuoteFormBtn.addEventListener('click', createAddQuoteForm);
 exportQuotesBtn.addEventListener('click', exportQuotes);
+categoryFilter.addEventListener('change', filterQuotes);
 
 // Initial setup
 loadQuotes();
-showRandomQuote();
+populateCategories();
+
+// Check for a saved filter and apply it, otherwise show a random quote
+const lastFilter = localStorage.getItem('lastCategoryFilter');
+if (lastFilter && quotes.some(quote => quote.category === lastFilter)) {
+    categoryFilter.value = lastFilter;
+    showRandomQuote(lastFilter);
+} else {
+    showRandomQuote();
+}
