@@ -125,7 +125,7 @@ async function addQuote() {
                 userId: 1,
             }),
             headers: {
-                'Content-Type': 'application/json; charset=UTF-8',
+                'Content-type': 'application/json; charset=UTF-8',
             },
         });
         if (response.ok) {
@@ -239,7 +239,7 @@ async function fetchQuotesFromServer() {
     }
 }
 
-// Function to sync local data with the server syncQuotes
+// Function to sync local data with the server
 async function syncWithServer() {
     const serverData = await fetchQuotesFromServer();
     if (serverData.length > 0) {
@@ -252,7 +252,7 @@ async function syncWithServer() {
         saveQuotes();
         populateCategories();
         showRandomQuote(categoryFilter.value);
-        statusMessage.textContent = 'Data synced! Server updates merged.';
+        statusMessage.textContent = 'Quotes synced with server!';
     } else {
         statusMessage.textContent = 'No updates from server. Local data is up-to-date.';
     }
